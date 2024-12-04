@@ -9,7 +9,7 @@ import os
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, select
-from app.utils.database_handler import get_engine
+from app.utils.database_handler import create_db_and_tables, get_session
 
 load_dotenv()  # take environment variables from .env
 
@@ -19,15 +19,6 @@ class GoogleChat(BaseModel):
 class Recipe(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     description: str
-
-engine = get_engine()
-
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
-
-def get_session():
-    with Session(engine) as session:
-        yield session
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
