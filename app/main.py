@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 import os
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-
+from sqlmodel import Field, Session, SQLModel, create_engine, selects
+from database import get_engine
 
 load_dotenv()  # take environment variables from .env
 
@@ -20,16 +20,7 @@ class Recipe(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     description: str
 
-db_password = os.environ["DB_PASSWORD"]
-db_host = os.environ["DB_HOST"]
-db_port = os.environ["DB_PORT"]
-db_username = os.environ["DB_USERNAME"]
-db_name = os.environ["DB_NAME"]
-
-db_url = f"postgresql+psycopg://{db_username}:{db_password}@{db_host}/{db_name}"
-
-connect_args = { }
-engine = create_engine(db_url, connect_args=connect_args)
+engine = get_engine()
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
