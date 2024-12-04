@@ -9,7 +9,7 @@ import os
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, select
-from app.utils.database_handler import create_db_and_tables, get_session
+from app.utils.database_handler import Database
 
 load_dotenv()  # take environment variables from .env
 
@@ -19,25 +19,25 @@ class GoogleChat(BaseModel):
 class Recipe(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     description: str
-
-SessionDep = Annotated[Session, Depends(get_session)]
-
+    
+database = Database()
 app = FastAPI()
 
 @app.on_event("startup")
 def on_startup():
-    create_db_and_tables()
+    database.create_db_and_tables()
 
 @app.get("/recipes/")
-async def recipe_list(session: SessionDep,
+async def recipe_list(
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
 ) -> list[Recipe]:
-    recipes = session.exec(select(Recipe).offset(offset).limit(limit)).all()
-    return recipes
+    with Session(database.engine) as session:
+        recipes = session.exec(select(Recipe).offset(offset).limit(limit)).all()
+        return recipes
 
 @app.post("/recipe/")
-async def recipe_maker(prompt: GoogleChat, session: SessionDep) -> Recipe:
+async def recipe_maker(prompt: GoogleChat) -> Recipe:
     genai.configure(api_key=os.environ["GEMINI_API_KEY"])
     model = genai.GenerativeModel("gemini-1.5-flash")
     my_recipe_prompt = """
@@ -68,9 +68,11 @@ Devuelveme la receta en formato markdown.
 
     recipe = Recipe()
     recipe.description = response.text
-    session.add(recipe)
-    session.commit()
-    session.refresh(recipe)
+    
+    with Session(database.engine) as session:
+        session.add(recipe)
+        session.commit()
+        session.refresh(recipe)
 
     return JSONResponse(content=json_compatible_item_data)
     
