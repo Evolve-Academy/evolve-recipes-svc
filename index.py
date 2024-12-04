@@ -28,7 +28,6 @@ db_name = os.environ["DB_NAME"]
 
 db_url = f"postgresql+psycopg://{db_username}:{db_password}@{db_host}/{db_name}"
 
-#connect_args = {"check_same_thread": False}
 connect_args = { }
 engine = create_engine(db_url, connect_args=connect_args)
 
