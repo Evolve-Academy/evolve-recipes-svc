@@ -9,7 +9,7 @@ import os
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, select
-from app.utils.database_handler import Database
+from app.utils.database_handler import get_database
 
 load_dotenv()  # take environment variables from .env
 
@@ -20,7 +20,7 @@ class Recipe(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     description: str
     
-database = Database()
+database = get_database()
 app = FastAPI()
 
 @app.on_event("startup")

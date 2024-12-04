@@ -2,35 +2,61 @@ from google.cloud.sql.connector import Connector
 from sqlmodel import create_engine, Session, SQLModel
 import os
 
-class Database():
+def get_database():
+    if os.environ.get("DB_ENGINE","CLOUD_SQL_PSQL") == "CLOUD_SQL_PSQL": 
+        return GoogleCloudPostgreSQL()
+    
+    if os.environ.get("DB_ENGINE","CLOUD_SQL_PSQL") == "PSQL":
+        return PostgreSQL()
+    
+    return None
+
+class AbstractDatabase():
+    
+    def __init__(self):
+        pass
+    
+    def create_db_and_tables(self):
+        SQLModel.metadata.create_all(self.engine)
+
+class PostgreSQL(AbstractDatabase):
+    
+    def __init__(self):
+        db_password = os.environ["DB_PASSWORD"]
+        db_host = os.environ["DB_HOST"]
+        db_port = os.environ["DB_PORT"]
+        db_username = os.environ["DB_USERNAME"]
+        db_name = os.environ["DB_NAME"]
+        db_url = f"postgresql+psycopg://{db_username}:{db_password}@{db_host}:{db_port}/{db_name}"
+        connect_args = {}
+        self.engine = create_engine(db_url, connect_args=connect_args)
+    
+
+class GoogleCloudPostgreSQL(AbstractDatabase):
+    
+    def get_connection(self):
+        db_password = os.environ["DB_PASSWORD"]
+        db_host = os.environ["DB_HOST"]
+        db_port = os.environ["DB_PORT"]
+        db_username = os.environ["DB_USERNAME"]
+        db_name = os.environ["DB_NAME"]
+        return self.connector.connect(
+            db_host,
+            "pg8000",
+            user=db_username,
+            password=db_password,
+            db=db_name
+        )
     
     def __init__(self):
         
-        self.db_password = os.environ["DB_PASSWORD"]
-        self.db_host = os.environ["DB_HOST"]
-        self.db_port = os.environ["DB_PORT"]
-        self.db_username = os.environ["DB_USERNAME"]
-        self.db_name = os.environ["DB_NAME"]
-        # get engine
-        self.engine = self.get_engine_postgres() if os.environ.get("DB_ENGINE_CLOUD_SQL","0") == "0" else self.get_engine_cloud_sql()
-
-    # create connection pool with 'creator' argument to our connection object function
-    def get_engine_cloud_sql(self):
-        return create_engine(
+        self.connector = Connector()
+        
+        self.engine = create_engine(
             "postgresql+pg8000://",
-            creator=Connector().connect(
-                self.db_host,
-                "pg8000",
-                user=self.db_username,
-                password=self.db_password,
-                db=self.db_name
-            ),
+            creator=self.get_connection,
+            echo=True
         )
-
-    def get_engine_postgres(self):
-        db_url = f"postgresql+psycopg://{self.db_username}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
-        connect_args = {}
-        return create_engine(db_url, connect_args=connect_args)
-
-    def create_db_and_tables(self):
-        SQLModel.metadata.create_all(self.engine)
+        
+        
+    
