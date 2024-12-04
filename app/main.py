@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 import os
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, selects
-from database import get_engine
+from sqlmodel import Field, Session, SQLModel, select
+from app.utils.database_handler import get_engine
 
 load_dotenv()  # take environment variables from .env
 

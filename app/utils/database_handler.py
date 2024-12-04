@@ -1,14 +1,12 @@
 from google.cloud.sql.connector import Connector
-import sqlalchemy
+from sqlmodel import create_engine
+import os
 
 db_password = os.environ["DB_PASSWORD"]
 db_host = os.environ["DB_HOST"]
 db_port = os.environ["DB_PORT"]
 db_username = os.environ["DB_USERNAME"]
 db_name = os.environ["DB_NAME"]
-
-# initialize Connector object
-connector = Connector()
 
 # function to return the database connection object
 def cloud_sql():
@@ -22,8 +20,10 @@ def cloud_sql():
     return conn
 
 # create connection pool with 'creator' argument to our connection object function
-def get_engine_cloud_sql()
-    return sqlalchemy.create_engine(
+def get_engine_cloud_sql():
+    # initialize Connector object
+    connector = Connector()
+    return create_engine(
         "postgresql+pg8000://",
         creator=get_conn_cloud_sql,
     )
