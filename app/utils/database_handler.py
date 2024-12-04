@@ -8,24 +8,19 @@ db_port = os.environ["DB_PORT"]
 db_username = os.environ["DB_USERNAME"]
 db_name = os.environ["DB_NAME"]
 
-# function to return the database connection object
-def cloud_sql():
-    conn = connector.connect(
-        db_host,
-        "pg8000",
-        user=db_username,
-        password=db_password,
-        db=db_name
-    )
-    return conn
-
 # create connection pool with 'creator' argument to our connection object function
 def get_engine_cloud_sql():
     # initialize Connector object
     connector = Connector()
     return create_engine(
         "postgresql+pg8000://",
-        creator=get_conn_cloud_sql,
+        creator=connector.connect(
+            db_host,
+            "pg8000",
+            user=db_username,
+            password=db_password,
+            db=db_name
+        ),
     )
 
 def get_engine_postgres():
